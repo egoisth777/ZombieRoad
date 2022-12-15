@@ -5,6 +5,7 @@ let car;
 let aim;
 let road;
 let building1;
+let fuelbar;
 
 
 // groups
@@ -19,7 +20,7 @@ let bullet_group;
 // images array
 let car_imgs;
 let rank_imgs;
-let healthbar_imgs;
+let fuelbar_imgs;
 let background_imgs;
 let roadsign_imgs;
 let explosion_imgs;
@@ -37,6 +38,8 @@ let blocker_img;
 // some constant arrays
 const CAR_ANI_ARR = ["carAnimation0", "carAnimation1", "carAnimation2", "carAnimation3", "carAnimation4"];
 const EX_ANI_ARR = ["explode1", "explode2", "explode3", "explode4"];
+const FUEL = ["fuel1", "fuel2", "fuel3", "fuel4", "fuel5", "fuel6", "fuel7", "fuel8", "fuel9", "fuel10"];
+
 
 // some constant numbers
 const CANVAS_HEIGHT = 800;
@@ -45,7 +48,7 @@ const MARGIN = 40;
 
 // some tracking information
 let score;
-
+let currentFuel;
 
 
 
@@ -82,9 +85,21 @@ preload = function(){
   // preload the building image
   building_img = loadAnimation("./assets/props/building1.png",{size:[300, 800], frames:1});
 
-
   // preload the blockers
   blocker_img = loadAnimation("./assets/props/blocker.png", {size:[64, 64], frames:1});
+
+  // preload the fuel_bar
+  fuelbar_imgs = new Array();
+  fuelbar_imgs[0] = loadAni("./assets/props/fueltanks/fueltank_00.png", { size: [64, 64], frames: 1 });
+  fuelbar_imgs[1] = loadAni("./assets/props/fueltanks/fueltank_01.png", { size: [64, 64], frames: 1 });
+  fuelbar_imgs[2] = loadAni("./assets/props/fueltanks/fueltank_02.png", { size: [64, 64], frames: 1 });
+  fuelbar_imgs[3] = loadAni("./assets/props/fueltanks/fueltank_03.png", { size: [64, 64], frames: 1 });
+  fuelbar_imgs[4] = loadAni("./assets/props/fueltanks/fueltank_04.png", { size: [64, 64], frames: 1 });
+  fuelbar_imgs[5] = loadAni("./assets/props/fueltanks/fueltank_05.png", { size: [64, 64], frames: 1 });
+  fuelbar_imgs[6] = loadAni("./assets/props/fueltanks/fueltank_06.png", { size: [64, 64], frames: 1 });
+  fuelbar_imgs[7] = loadAni("./assets/props/fueltanks/fueltank_07.png", { size: [64, 64], frames: 1 });
+  fuelbar_imgs[8] = loadAni("./assets/props/fueltanks/fueltank_08.png", { size: [64, 64], frames: 1 });
+  fuelbar_imgs[9] = loadAni("./assets/props/fueltanks/fueltank_09.png", { size: [64, 64], frames: 1 });
 }
 
 
@@ -93,6 +108,8 @@ function setup() {
   createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   // set up some tracking information
   score = 0;
+  currentFuel = 5;
+
 
 
   // set up the car sprite
@@ -108,6 +125,10 @@ function setup() {
   car.position.x = CANVAS_WIDTH / 2;
   car.kinematic = true;
   car.layer = 2;
+  car.update = function(){
+    console.log(currentFuel);
+    fuelbar.changeAnimation(FUEL[currentFuel - 1]);
+  }
   
   // set the road
   road = new Sprite();
@@ -140,10 +161,16 @@ function setup() {
   blocker_group.removeAll();
   bullet_group = new Group();
   bullet_group.removeAll(); 
+  // set up the fuel bar
+  fuelbar = new Sprite();
+  fuelbar.removeColliders();
+  for(let i = 0; i < fuelbar_imgs.length; i++){
+   fuelbar.addAni(FUEL[i], fuelbar_imgs[i]);
+  }
+  fuelbar.changeAnimation(FUEL[currentFuel - 1]);
+  fuelbar.x = width / 2;
+  fuelbar.y = 15 * height / 16;
 
-
-
-	
 }
 
 function collect(car, gem) {
@@ -151,33 +178,31 @@ function collect(car, gem) {
 }
 
 function draw() {
-  // deduct the health for the monster
+  // deduct the fuel for the monster
   background(0);
   carControl();
   out_of_road();
   out_of_boundary();
   
   // place to have the colliders
-
+  
   bullet_group.collides(blocker_group, bulletHit);
   // car.collides(blocker_group, carHit);
-  car.collides(blocker_group, collect);
+  car.collides(blocker_group, carHit);
+
   // create two blockers if situation satisfies
-  
-  
   if (blocker_group.size() < 2){
     createBlocker(random(300, 500), 0, 5, 120);
   }
-
-
-
-  // console.log(bullet_group.size());
-  // console.log(blocker_group.size());
 }
 
 function carHit(car, sprite){
-  car.remove();
+  createExplosion(car.x, car.y, 3, 10, 1); 
+  currentFuel --;
   sprite.remove();
+  if(currentFuel == 0){
+    car.remove();
+  }
 }
 
 function bulletHit(bullet, sprite){
@@ -233,8 +258,23 @@ function carControl(){
 }
 
 function out_of_boundary() {
+
+  
   for (var i = 0; i < allSprites.length; i++) {
     let s = allSprites[i];
+    if(blocker_group.includes(s)){
+      if (s.position.x < -MARGIN) {
+        s.remove();
+      } else if (s.position.x > width + MARGIN) {
+        s.remove();
+      }
+      if (s.position.y < -MARGIN) {
+        s.remove();
+      } else if (s.position.y > height + MARGIN) {
+        s.remove();
+      }
+    }
+    
     if (s.position.x < -MARGIN) {
       s.position.x = width + MARGIN;
     } else if (s.position.x > width + MARGIN) {
