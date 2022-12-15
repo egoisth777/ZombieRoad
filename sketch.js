@@ -1,7 +1,209 @@
-function setup() {
-  createCanvas(400, 400);
+// define some sprites and groups
+
+// sprites
+let car;
+let aim;
+let road;
+// groups
+let zombie_type1_group;
+let zombie_type2_group;
+let zombie_type3_group;
+
+// images array
+let car_imgs;
+let rank_imgs;
+let healthbar_imgs;
+let background_imgs;
+let building_imgs;
+let roadsign_imgs;
+let explosion_imgs;
+
+
+
+// single image
+let flying_dragon_img;
+let spinning_moon_img;
+let road_img;
+let aim_img;
+let bullet_img;
+
+
+// some constant arrays
+const CAR_ANI_ARR = ["carAnimation0", "carAnimation1", "carAnimation2", "carAnimation3", "carAnimation4"];
+const EX_ANI_ARR = ["explode1", "explode2", "explode3", "explode4"];
+
+// some constant numbers
+const CANVAS_HEIGHT = 800;
+const CANVAS_WIDTH  = 800;
+const MARGIN = 40;
+
+
+
+
+
+// preload the game resources
+preload = function(){
+  // preload car animation
+  car_imgs = new Array();
+  car_imgs.length = 5;
+  car_imgs[0] = loadAnimation("./assets/car/car_move.png", {size: [64, 64], frames: 7});
+  car_imgs[1] = loadAnimation("./assets/car/car_shoot.png", {size: [64, 64], frames: 8});
+  car_imgs[2] = loadAnimation("./assets/car/car_fire.png", {size: [64, 64], frames: 10});
+  for(let i = 0; i < car_imgs.size; i++){
+    car_imgs[i].frameDelay = 0.1;
+  }
+
+  // preload the road animation
+  road_img = loadAnimation("./assets/props/road.png", {size:[200, 800], frames:16});
+  
+  // preload the explosion animation
+  explosion_imgs = new Array();
+  explosion_imgs.length = 4;
+  explosion_imgs[0] = loadAnimation("./assets/effects/explode1.png", {size: [64,64], frames: 9});
+  explosion_imgs[1] = loadAnimation("./assets/effects/explode2.png", {size: [64,64], frames: 25});
+  explosion_imgs[2] = loadAnimation("./assets/effects/explode3.png", {size: [64,64], frames: 25});
+  explosion_imgs[3] = loadAnimation("./assets/effects/explode4.png", {size: [64,64], frames: 25});
+
+  
+  // preload the aim image
+  aim_img = loadAnimation("./assets/props/aim.png", {size: [64,64], frames: 12});
+
+  // preload the bullet image
+  bullet_img = loadAnimation("./assets/car/bullet1.png", {size:[32, 32], frames:6});
 }
 
+
+
+function setup() {
+  createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+  
+  // set up the car sprite
+  car = new Sprite();
+  car.addAni(CAR_ANI_ARR[2], car_imgs[2]); // car fire missle animation
+  car.addAni(CAR_ANI_ARR[1], car_imgs[1]); // car fire bullets animation
+  car.addAni(CAR_ANI_ARR[0], car_imgs[0]); // car move animation
+  
+  
+  // car.addAni(CAR_ANI_ARR[3], car_imgs[3]); // car upgraded move animation
+  // car.addAni(CAR_ANI_ARR[4], car_imgs[4]); // car upgraded move animation
+  car.position.y = CANVAS_HEIGHT/ 4 * 3;
+  car.position.x = CANVAS_WIDTH / 2;
+  car.kinematic = true;
+  car.layer = 2;
+  
+  // set the road
+  road = new Sprite();
+  road.addAni("road", road_img);
+  road.position.y = CANVAS_HEIGHT/ 2;
+  road.position.x = CANVAS_WIDTH / 2;
+  road.removeColliders();
+  road.layer = 1;
+
+  aim = new Sprite();
+  aim.addAni("aim", aim_img);
+  aim.removeColliders();
+  aim.layer = 3;
+  aim.update = function(){
+    aim.position.x = mouse.x;
+    aim.position.y = mouse.y;
+  }
+}
+
+
 function draw() {
-  background(220);
+  // deduct the health for the monster
+  background(0);
+  carControl();
+  out_of_road();
+  out_of_boundary();
+}
+
+
+// control the movement of the car
+function carControl(){ 
+
+
+  if(!car.removed && kb.presses('s')){
+    createBullet(12, 30, bullet_img);
+    car.changeAni(CAR_ANI_ARR[1]);
+    createExplosion(car.x, car.y, 3, 10, 1);
+  }else{
+    car.changeAni(CAR_ANI_ARR[0]);
+  }
+
+  if (kb.presses('left') || kb.presses('D')) {
+      car.move(50, 'left', 4);
+  }
+
+  if (kb.presses('right') || kb.presses('D')) {
+   car.move(50, 'right', 4);
+  }
+
+  if(kb.presses('k')){
+    createExplosion(100, 100, 2, 75, 12);
+  }
+}
+
+function out_of_boundary() {
+
+  for (var i = 0; i < allSprites.length; i++) {
+    let s = allSprites[i];
+    if (s.position.x < -MARGIN) {
+      s.position.x = width + MARGIN;
+    } else if (s.position.x > width + MARGIN) {
+      s.position.x = -MARGIN;
+    }
+
+    if (s.position.y < -MARGIN) {
+      s.position.y = height + MARGIN;
+    } else if (s.position.y > height + MARGIN) {
+      s.position.y = -MARGIN;
+    }
+  }
+}
+
+// what happens if the car is placed of the the road
+
+function out_of_road(){
+  if(car.position.x > 500 || car.position.x < 300){
+    car.remove();
+    
+  }
+}
+
+function createExplosion(x, y, type, life, scale){
+  let o = new Sprite();
+  o.addAni(EX_ANI_ARR[type - 1], explosion_imgs[type - 1]);
+  o.life = life;
+  o.scale = 1;
+  o.position.x = x;
+  o.position.y = y;
+  o.removeColliders();
+}
+
+/**
+ * Create Bullet
+ * @param { } speed 
+ * @param { } life 
+ * @param {*} animation 
+ */
+function createBullet(speed = 13, life, animation){
+  // find angle between two points
+  
+  let bullet = new Sprite();
+  bullet.addAni("animation", animation);
+  bullet.life = life;
+  // bullet.changeAnimation(animation);
+  bullet.x = car.x;
+  bullet.y = car.y;
+
+  // setting the angle between
+  bullet.layer = 3;
+  let v0 = createVector(car.x, car.y);
+  let v1 = createVector(50,0);
+  let v2 = createVector(mouse.x- v0.x, mouse.y - v0.y);
+  bullet.direction = v1.angleBetween(v2);
+  
+  bullet.speed = speed;
+  bullet.kinematic = true;
 }
