@@ -1,3 +1,5 @@
+
+
 // define the background music
 let background_music;
 let sound_effect_1;
@@ -92,7 +94,7 @@ preload = function(){
   title_img = loadImage("./assets/title.png");
   ending_img = loadImage("./assets/ending.png");
   background_music = loadSound("./assets/music/in_game.mp3");
-  
+  sound_effect_1 = loadSound("./assets/music/shooting.wav"); 
 
 
   // preload car animation
@@ -462,6 +464,8 @@ function carControl(){
     createBullet(12, 30, bullet_img);
     car.changeAni(CAR_ANI_ARR[1]);
     createExplosion(car.x, car.y, 3, 10, 1);
+    sound_effect_1.play();
+    sound_effect_1.setVolume(0.1);
   }else{
     car.changeAni(CAR_ANI_ARR[0]);
   }
@@ -482,10 +486,10 @@ function carControl(){
   }
 
   if(kb.presses('e')){
-    if(rank_count_group.size() >= 10){
+    if(rank_count_group.size() >= 5){
       rank_count_group.removeAll();
-      createExplosion(mouse.x, mouse.y, 2, 75, 12);
       zombie_type1_group.removeAll();
+      createExplosion(mouse.x, mouse.y, 2, 75, 12);
     }
   }
 }
